@@ -246,11 +246,8 @@ int hypervisor_paused = 0;
 int screen_shot = 0;
 char *screen_shot_file = NULL;
 int screen_rows_remaining = 0;
-int screen_address = 0;
 int next_screen_address = 0;
 int screen_line_offset = 0;
-int screen_line_step = 0;
-int screen_width = 0;
 unsigned char screen_line_buffer[256];
 
 char *type_text = NULL;
@@ -890,40 +887,6 @@ char *find_serial_port()
   return device;
 }
 #endif
-
-void progress_to_RTI(void)
-{
-  int bytes = 0;
-  int match_state = 0;
-  int b = 0;
-  unsigned char buff[8192];
-  slow_write_safe(fd, "tc\r", 3);
-  while (1) {
-    b = serialport_read(fd, buff, 8192);
-    if (b > 0)
-      dump_bytes(2, "RTI search input", buff, b);
-    if (b > 0) {
-      bytes += b;
-      buff[b] = 0;
-      for (int i = 0; i < b; i++) {
-        if (match_state == 0 && buff[i] == 'R') {
-          match_state = 1;
-        }
-        else if (match_state == 1 && buff[i] == 'T') {
-          match_state = 2;
-        }
-        else if (match_state == 2 && buff[i] == 'I') {
-          slow_write_safe(fd, "\r", 1);
-          log_debug("RTI seen after %d bytes", bytes);
-          return;
-        }
-        else
-          match_state = 0;
-      }
-    }
-    fflush(stdout);
-  }
-}
 
 int type_serial_mode = 0;
 
@@ -2327,7 +2290,7 @@ int main(int argc, char **argv)
     mega65_poke(0xFFD3060,0x800>>0);
     mega65_poke(0xFFD3061,0x800>>8);
     mega65_poke(0xFFD3062,0x800>>16);
-    mega65_poke(0xffd3054,0x00); 
+    mega65_poke(0xffd3054,0x00);
     mega65_poke(0xffd3031,0x80); // 80 columns
     for(int i=0;i<=256;i++) {
       for(int y=0;y<25;y++) for(int x=0;x<80;x++) buf[y*80+x]=x+i;
