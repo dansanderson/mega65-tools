@@ -475,7 +475,6 @@ int load_file(char *filename, int load_addr, int patchHyppo)
       }
     }
     log_debug("read to $%04x (%d bytes)", load_addr, b);
-    fflush(stdout);
     // load_addr=0x400;
     // XXX - The l command requires the address-1, and doesn't cross 64KB boundaries.
     // Thus writing to $xxx0000 requires adding 64K to fix the actual load address
@@ -1080,8 +1079,6 @@ int fetch_ram_cacheable(unsigned long address, unsigned int count, unsigned char
   for (int i = 0; i < count; i++) {
     if (!ram_cache_valids[address + i]) {
       // Cache not valid here -- so read some data
-      printf(".");
-      fflush(stdout);
       //      printf("Fetching $%08x for cache.\n",address);
       fetch_ram(address, 256, &ram_cache[address]);
       for (int j = 0; j < 256; j++)
