@@ -596,7 +596,8 @@ int dump_bytes(int col, char *msg, unsigned char *bytes, int length)
 int stuff_keybuffer(char *s)
 {
   int buffer_addr = 0x277;
-  int buffer_len_addr = 0xc6;
+  int buffer_len_addr = 0xc6, i;
+  char cmd[1024], *pos;
 
   if (saw_c65_mode) {
     buffer_addr = 0x2b0;
@@ -604,8 +605,7 @@ int stuff_keybuffer(char *s)
   }
 
   log_concat(NULL);
-  log_concat("Injecting string into key buffer at ");
-  log_concat("$%04X : ", buffer_addr);
+  log_concat("injecting string into key buffer at $%04X: ");
   for (int i = 0; s[i]; i++) {
     if (s[i] >= ' ' && s[i] < 0x7c)
       log_concat("%c", s[i]);
@@ -614,10 +614,24 @@ int stuff_keybuffer(char *s)
   }
   log_debug(NULL);
 
-  char cmd[1024];
-  snprintf(cmd, 1024, "s%x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\rs%x %d\r", buffer_addr, s[0], s[1], s[2], s[3],
-      s[4], s[5], s[6], s[7], s[8], s[9], buffer_len_addr, (int)strlen(s));
-  return slow_write(fd, cmd, strlen(cmd));
+  snprintf(cmd, 1024, "s%x 0\r", buffer_len_addr);
+  slow_write(fd, cmd, strlen(cmd));
+  usleep(10000);
+
+  pos = s;
+  while (*pos) {
+    snprintf(cmd, 1024, "s%04x", buffer_addr);
+    for (i = 0; i < 10 && pos[i]; i++) {
+      snprintf(cmd + 5 + i * 3, 6, " %02x", toupper(pos[i]));
+    }
+    log_debug("stuff_keybuffer: '%s' %d", cmd, i);
+    snprintf(cmd + 5 + i * 3, 40, "\rs%x %d\r", buffer_len_addr, i);
+    slow_write(fd, cmd, strlen(cmd));
+    if (i == 10)
+      usleep(25000);
+    pos = pos + i;
+  }
+  return 0;
 }
 
 int read_and_print(PORT_TYPE fd)

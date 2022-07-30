@@ -191,6 +191,7 @@ void print_screencode(unsigned char c, int upper_case)
 {
   // A nice reference for these mappings can be found here:
   // https://style64.org/petscii/
+  // clang-format off
   static int map_screencode_to_utf8[][2] = {
     { 0x40, 0x2501 }, // box drawings heavy horizontal
     { 0x43, 0x2501 }, // box drawings heavy horizontal
@@ -211,6 +212,7 @@ void print_screencode(unsigned char c, int upper_case)
     { 0x6e, 0x2513 }, // box drawings heavy down and left
     { 0x6f, 0x2582 }, // lower one quarter block
     { -1, -1 } };
+  // clang-format on
   int rev = 0;
   if (c & 0x80) {
     rev = 1;
